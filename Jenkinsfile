@@ -1,58 +1,57 @@
 pipeline {
     agent any
-
     environment {
-        // هنا يمكن تعريف متغيرات البيئة
+        DEPENDENCY_CHECK_HOME = '/opt/dependency-check'  // مسار التثبيت لـ OWASP Dependency-Check على الخادم
     }
-
     stages {
         stage('Checkout') {
             steps {
-                // استنساخ الكود من المستودع
                 git 'https://github.com/abdallabell/Ab_01.git'
             }
         }
-
         stage('Build Java') {
             steps {
-                // بناء الكود باستخدام javac
                 script {
+                    // بناء التطبيق
                     sh 'javac App.java'
                 }
             }
         }
-
-        stage('Docker Build') {
+        stage('OWASP Dependency-Check') {
             steps {
-                // بناء صورة Docker
                 script {
-                    sh 'docker build -t my-java-app .'
+                    // تنفيذ فحص OWASP Dependency-Check
+                    sh '''
+                    dependency-check --project "MyJavaProject" \
+                                     --scan . \
+                                     --out ./dependency-check-report \
+                                     --format HTML
+                    '''
                 }
             }
         }
-
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t myapp .'
+            }
+        }
         stage('Run Docker') {
             steps {
-                // تشغيل حاوية Docker
-                script {
-                    sh 'docker run -d -p 8080:8080 my-java-app'
-                }
+                sh 'docker run -d -p 8080:8080 myapp'
             }
         }
     }
-
     post {
         always {
-            // تنظيف البيئة بعد الانتهاء من تنفيذ جميع المراحل
+            // إرسال التقرير بعد الفحص أو الإجراءات المطلوبة
+            archiveArtifacts allowEmptyArchive: true, artifacts: 'dependency-check-report/*.html'
             echo 'Pipeline finished.'
         }
-        success {
-            // يمكن إضافة إشعار عند النجاح هنا
-            echo 'Pipeline completed successfully!'
-        }
         failure {
-            // يمكن إضافة إشعار عند الفشل هنا
-            echo 'Pipeline failed.'
+            // إرسال تنبيه إذا تم اكتشاف مشاكل أثناء الفحص
+            mail to: 'admin@example.com',
+                 subject: "Jenkins Build Failure: ${currentBuild.fullDisplayName}",
+                 body: "The build has failed. Please check the logs for more details."
         }
     }
 }
