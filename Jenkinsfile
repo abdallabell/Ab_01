@@ -1,58 +1,36 @@
-
 pipeline {
     agent any
-    
-    tools {
-        jdk 'jdk17'  # يجب تكوين JDK في Jenkins
-    }
-    
+
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                git 'https://github.com/USERNAME/REPO.git'
             }
         }
-        
+
         stage('Build') {
             steps {
-                sh '''
-                    echo "Building Java application..."
-                    mkdir -p target
-                    javac -d target/classes src/main/java/com/example/App.java
-                    jar cfe target/hello-devops.jar com.example.App -C target/classes .
-                '''
+                sh 'javac App.java'
             }
         }
-        
-        stage('Build Docker Image') {
+
+        stage('Run Java') {
             steps {
-                script {
-                    docker.build("hello-devops:latest")
-                }
+                sh 'java App'
             }
         }
-        
-        stage('Run') {
+
+        stage('Docker Build') {
             steps {
-                script {
-                    docker.image("hello-devops:latest").run("--name hello-devops-container -d")
-                    sleep(5)
-                    sh 'docker logs hello-devops-container'
-                }
-            }
-            post {
-                always {
-                    sh 'docker stop hello-devops-container || true'
-                    sh 'docker rm hello-devops-container || true'
-                }
+                sh 'docker build -t hello-world-java .'
             }
         }
-    }
-    
-    post {
-        always {
-            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
+
+        stage('Docker Run') {
+            steps {
+                sh 'docker run --rm hello-world-java'
+            }
         }
     }
 }
-EOF
+
