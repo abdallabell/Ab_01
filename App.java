@@ -1,5 +1,5 @@
-public class Main {
+public class App {
     public static void main(String[] args) {
-        System.out.println("مرحبا بك في مشروع DevOps البسيط!");
+        System.out.println("Hello, World!");
     }
 }
