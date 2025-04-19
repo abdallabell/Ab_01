@@ -9,10 +9,16 @@ pipeline {
         }
 
         stage('Security Scan') {
-            steps {
-                sh 'echo "Simulated security scan..."'
+    steps {
+        script {
+            def result = sh(script: "grep -r 'Base64' . || true", returnStatus: true)
+            if (result == 0) {
+                error("Security Scan Failed: Weak encoding (Base64) detected!")
             }
         }
+    }
+}
+
 
         stage('Docker Build') {
             steps {
