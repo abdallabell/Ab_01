@@ -1,13 +1,6 @@
 pipeline {
     agent any
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/abdallabell/Ab_01.git'
-            }
-        }
-
         stage('Build Java') {
             steps {
                 script {
